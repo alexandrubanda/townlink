@@ -2,7 +2,6 @@ import React, { useState, useRef, useEffect } from 'react';
 import './output.css'; 
 import logo from './logoprimarie (2).png';
 
-
 const App = () => {
   const [input, setInput] = useState('');  
   const [messages, setMessages] = useState([]);  
@@ -23,11 +22,25 @@ const App = () => {
     setLoading(true);
 
     try {
-      const response = await fakeBackendCall(message);
+      const response = await fetch('http://localhost:8000/query', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ query: message }),
+      });
+
+      console.log(response);
+
+      if (!response.ok) {
+        throw new Error('Network response was not ok');
+      }
+
+      const data = await response.json();
 
       setMessages((prevMessages) => [
         ...prevMessages,
-        { sender: 'backend', text: response },
+        { sender: 'backend', text: data.answer },
       ]);
     } catch (error) {
       console.error('Error:', error);
@@ -36,18 +49,9 @@ const App = () => {
     }
   };
 
-
-  const fakeBackendCall = (message) => {
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        resolve(`TownLink: ${message}`);
-      }, 1000);  
-    });
-  };
-
-
   const handleKeyPress = (event) => {
     if (event.key === 'Enter' && input.trim()) {
+      event.preventDefault(); // Prevent newline on Enter
       sendMessage(input);
       setInput(''); 
     }
@@ -60,7 +64,6 @@ const App = () => {
     }
   };
 
-  
   useEffect(() => {
     if (textareaRef.current) {
       textareaRef.current.style.height = 'auto';  
@@ -76,7 +79,6 @@ const App = () => {
           <img src={logo} alt="Logo" className="h-8 w-8" />
           <span className="text-xl font-bold">Townlink</span>
         </div>
-      
       </header>
 
       {/* Messages Section */}
@@ -98,12 +100,11 @@ const App = () => {
               <p>{msg.text}</p>
             </div>
           ))}
-         {loading && (
-          <div className="p-3 max-w-xs rounded-lg bg-gray-200 text-gray-700 animate-pulse">
-            <p>Loading...</p>
+          {loading && (
+            <div className="p-3 max-w-xs rounded-lg bg-gray-200 text-gray-700 animate-pulse">
+              <p>Loading...</p>
             </div>
           )}
-
         </div>
       </div>
 
@@ -131,10 +132,12 @@ const App = () => {
 
       {/* Footer */}
       <footer className="bg-[#F9FAFB] text-[#6B7280] p-4 text-center border-t border-gray-200">
-        <p>Thanks for trying our demo! </p>
+        <p>Thanks for trying our demo!</p>
       </footer>
     </div>
   );
 };
 
 export default App;
+
+
